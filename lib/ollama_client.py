@@ -6,7 +6,7 @@ from lib.image_utils import image_to_base64, validate_image
 
 OLLAMA_URL = "http://localhost:11434/api/chat"
 MODEL = "llama3.2-vision"
-TIMEOUT = 120  # seconds
+TIMEOUT = 300  # seconds — vision models can be slow on limited RAM
 
 DESCRIBE_PROMPT = (
     "Describe the main character(s) in this image in detail: "

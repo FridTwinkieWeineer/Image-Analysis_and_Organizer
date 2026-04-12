@@ -23,10 +23,27 @@ def find_images(root: str) -> list[str]:
     return images
 
 
-def image_to_base64(image_path: str) -> str:
-    """Read an image file and return its base64-encoded string."""
-    with open(image_path, "rb") as f:
-        return base64.b64encode(f.read()).decode("utf-8")
+def image_to_base64(image_path: str, max_dimension: int = 1024) -> str:
+    """Read an image, resize if larger than max_dimension, return base64 string.
+
+    Resizing drastically reduces RAM usage and API latency for vision models
+    while preserving enough detail for character description.
+    """
+    img = Image.open(image_path)
+    # Convert palette/RGBA to RGB for JPEG encoding
+    if img.mode in ("RGBA", "P", "LA"):
+        img = img.convert("RGB")
+
+    # Resize if either dimension exceeds max
+    w, h = img.size
+    if max(w, h) > max_dimension:
+        ratio = max_dimension / max(w, h)
+        new_size = (int(w * ratio), int(h * ratio))
+        img = img.resize(new_size, Image.LANCZOS)
+
+    buf = BytesIO()
+    img.save(buf, format="JPEG", quality=85)
+    return base64.b64encode(buf.getvalue()).decode("utf-8")
 
 
 def make_thumbnail(image_path: str, size: tuple[int, int] = (200, 200)) -> Image.Image:
