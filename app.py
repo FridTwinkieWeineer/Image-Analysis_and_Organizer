@@ -1,16 +1,18 @@
 """Image Analysis & Organizer — Streamlit UI."""
 
 import os
-import time
+from collections import Counter
 
 import numpy as np
 import streamlit as st
 
-from lib.state import load_state, save_state, update_description, clear_clusters
-from lib.image_utils import find_images, make_thumbnail, validate_image
+from lib.state import load_state, save_state, update_description
+from lib.image_utils import find_images, make_thumbnail
 from lib.ollama_client import check_ollama_available, describe_image
 from lib.clustering import embed_descriptions, cluster_embeddings, find_similar, get_embedder
-from lib.organizer import build_file_map, copy_to_folders, generate_manifest, reveal_in_finder
+from lib.organizer import (
+    build_file_map, copy_to_folders, generate_manifest, reveal_in_finder, _sanitize_folder_name,
+)
 
 # ---------------------------------------------------------------------------
 # App config
@@ -329,7 +331,6 @@ def render_label():
         groups.setdefault(effective_id, []).append(path)
 
     sorted_ids = sorted(groups.keys(), key=lambda x: (x == -1, x))
-    all_label_options = [labels.get(str(cid), f"Cluster {cid}") for cid in sorted_ids]
 
     changed = False
 
@@ -438,12 +439,10 @@ def render_organize():
 
     # Summary table
     st.subheader("Summary")
-    from collections import Counter
     label_counts = Counter(r["cluster_label"] for r in records)
 
     summary_data = []
     for label, count in sorted(label_counts.items()):
-        from lib.organizer import _sanitize_folder_name
         dest = os.path.join(output_dir, _sanitize_folder_name(label))
         summary_data.append({"Label": label, "Images": count, "Destination": dest})
 
